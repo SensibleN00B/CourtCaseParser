@@ -1,0 +1,1 @@
+GRANT ALL PRIVILEGES ON DATABASE court_cases TO admin;

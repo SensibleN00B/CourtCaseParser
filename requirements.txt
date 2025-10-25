@@ -1,4 +1,4 @@
-alembic==1.17.0
+alembic==1.13.1
 asyncpg==0.30.0
 black==25.9.0
 certifi==2025.10.5
@@ -24,8 +24,10 @@ pytokens==0.2.0
 pytz==2025.2
 requests==2.32.5
 six==1.17.0
-SQLAlchemy==2.0.44
+SQLAlchemy==2.0.29
 tqdm==4.67.1
+types-pytz==2025.2.0.20250809
 typing_extensions==4.15.0
 tzdata==2025.2
+uliweb-alembic==0.6.9
 urllib3==2.5.0
