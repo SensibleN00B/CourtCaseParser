@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: fact_test_db
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: some_password
+      POSTGRES_DB: court_cases
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d court_cases"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  alembic:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://admin:some_password@db:5432/court_cases
+    command: alembic upgrade head
+
+
+volumes:
+  postgres_data:

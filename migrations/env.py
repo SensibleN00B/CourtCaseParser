@@ -4,16 +4,18 @@ import sys
 from logging.config import fileConfig
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR / "src"))
+
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.append(str(BASE_DIR / "src"))
+from database.models import Base
+
 
 from alembic import context
 
-from database.models import Base
 
 load_dotenv()
 
