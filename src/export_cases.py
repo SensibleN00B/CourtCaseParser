@@ -1,20 +1,36 @@
-import sys
-import os
-import csv
 import asyncio
-import asyncpg
+import csv
+import os
+import sys
+from typing import Iterable, List
 
-from typing import List, Iterable
+import asyncpg
 from dotenv import load_dotenv
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QPushButton, QLabel,
-    QLineEdit, QFileDialog, QVBoxLayout, QMessageBox
+    QApplication,
+    QFileDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 COLUMNS = [
-    "court_name", "case_number", "case_proc", "registration_date",
-    "judge", "judges", "participants", "stage_date", "stage_name",
-    "cause_result", "cause_dep", "type", "description",
+    "court_name",
+    "case_number",
+    "case_proc",
+    "registration_date",
+    "judge",
+    "judges",
+    "participants",
+    "stage_date",
+    "stage_name",
+    "cause_result",
+    "cause_dep",
+    "type",
+    "description",
 ]
 
 
@@ -109,12 +125,16 @@ class ExportGUI(QWidget):
         self.btn_export.clicked.connect(self.start_export)
 
     def load_input_file(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Choose input CSV", "", "CSV Files (*.csv)")
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Choose input CSV", "", "CSV Files (*.csv)"
+        )
         if path:
             self.input_path.setText(path)
 
     def save_output_file(self):
-        path, _ = QFileDialog.getSaveFileName(self, "Save output CSV", "", "CSV Files (*.csv)")
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save output CSV", "", "CSV Files (*.csv)"
+        )
         if path:
             self.output_path.setText(path)
 
