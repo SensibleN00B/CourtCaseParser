@@ -1,26 +1,20 @@
-import argparse
-import asyncio
-import csv
+import sys
 import os
-from typing import Iterable, List
-
+import csv
+import asyncio
 import asyncpg
+
+from typing import List, Iterable
 from dotenv import load_dotenv
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QPushButton, QLabel,
+    QLineEdit, QFileDialog, QVBoxLayout, QMessageBox
+)
 
 COLUMNS = [
-    "court_name",
-    "case_number",
-    "case_proc",
-    "registration_date",
-    "judge",
-    "judges",
-    "participants",
-    "stage_date",
-    "stage_name",
-    "cause_result",
-    "cause_dep",
-    "type",
-    "description",
+    "court_name", "case_number", "case_proc", "registration_date",
+    "judge", "judges", "participants", "stage_date", "stage_name",
+    "cause_result", "cause_dep", "type", "description",
 ]
 
 
@@ -39,8 +33,8 @@ def _read_case_numbers(csv_path: str) -> List[str]:
     if numbers and numbers[0].lower() in {"case_number", "number", "case", "case_no"}:
         numbers = numbers[1:]
 
+    unique = []
     seen = set()
-    unique: List[str] = []
     for n in numbers:
         if n not in seen:
             seen.add(n)
@@ -52,6 +46,7 @@ async def _fetch_cases(dsn: str, case_numbers: Iterable[str]) -> List[dict]:
     nums = list(case_numbers)
     if not nums:
         return []
+
     conn = await asyncpg.connect(dsn)
     try:
         rows = await conn.fetch(
@@ -75,6 +70,8 @@ def _write_csv(path: str, rows: List[dict]):
 async def export_cases(input_csv: str, output_csv: str) -> int:
     load_dotenv()
     database_url = os.getenv("DATABASE_URL_SYNC")
+    if not database_url:
+        raise ValueError("DATABASE_URL_SYNC is not set in .env file")
 
     numbers = _read_case_numbers(input_csv)
     rows = await _fetch_cases(database_url, numbers)
@@ -82,22 +79,65 @@ async def export_cases(input_csv: str, output_csv: str) -> int:
     return len(rows)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Export cases by case numbers from CSV"
-    )
-    parser.add_argument(
-        "--input",
-        "-i",
-        required=True,
-        help="Path to CSV with case numbers (one per row)",
-    )
-    parser.add_argument("--output", "-o", required=True, help="Path to output CSV")
-    args = parser.parse_args()
+class ExportGUI(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Court Cases Exporter (PyQt6)")
+        self.setGeometry(500, 300, 400, 200)
 
-    count = asyncio.run(export_cases(args.input, args.output))
-    print(f"Exported {count} rows to {args.output}")
+        self.input_path = QLineEdit(self)
+        self.output_path = QLineEdit(self)
+
+        self.btn_input = QPushButton("Select Input CSV", self)
+        self.btn_output = QPushButton("Select Output CSV", self)
+        self.btn_export = QPushButton("Start Export", self)
+
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Input CSV:"))
+        layout.addWidget(self.input_path)
+        layout.addWidget(self.btn_input)
+
+        layout.addWidget(QLabel("Output CSV:"))
+        layout.addWidget(self.output_path)
+        layout.addWidget(self.btn_output)
+
+        layout.addWidget(self.btn_export)
+        self.setLayout(layout)
+
+        self.btn_input.clicked.connect(self.load_input_file)
+        self.btn_output.clicked.connect(self.save_output_file)
+        self.btn_export.clicked.connect(self.start_export)
+
+    def load_input_file(self):
+        path, _ = QFileDialog.getOpenFileName(self, "Choose input CSV", "", "CSV Files (*.csv)")
+        if path:
+            self.input_path.setText(path)
+
+    def save_output_file(self):
+        path, _ = QFileDialog.getSaveFileName(self, "Save output CSV", "", "CSV Files (*.csv)")
+        if path:
+            self.output_path.setText(path)
+
+    def show_message(self, text: str):
+        QMessageBox.information(self, "Info", text)
+
+    def start_export(self):
+        in_path = self.input_path.text().strip()
+        out_path = self.output_path.text().strip()
+
+        if not in_path or not out_path:
+            self.show_message("Please select both input and output paths.")
+            return
+
+        try:
+            count = asyncio.run(export_cases(in_path, out_path))
+            self.show_message(f"✅ Exported {count} rows to:\n{out_path}")
+        except Exception as e:
+            self.show_message(f"❌ Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    gui = ExportGUI()
+    gui.show()
+    sys.exit(app.exec())
