@@ -1,13 +1,12 @@
 import asyncio
-import os
 import importlib.util
+import os
 from typing import List
 
-import pytest
 import asyncpg
+import pytest
 
 import csv_to_db
-
 
 TEST_DSN_ENV = "TEST_DATABASE_URL"
 
@@ -60,7 +59,11 @@ def db_dsn(request):
             dsn = f"postgresql://{cred}{host}:{port}/{dbname}"
             asyncio.run(_ensure_schema(dsn))
             return dsn
-    dsn_env = os.getenv(TEST_DSN_ENV) or os.getenv("DATABASE_URL_SYNC") or os.getenv("DATABASE_URL")
+    dsn_env = (
+        os.getenv(TEST_DSN_ENV)
+        or os.getenv("DATABASE_URL_SYNC")
+        or os.getenv("DATABASE_URL")
+    )
     if not dsn_env:
         pytest.skip(
             "pytest-postgresql not installed and no TEST_DATABASE_URL/DATABASE_URL_SYNC provided"
@@ -168,8 +171,10 @@ def test_copy_is_sequential_with_semaphore(tmp_path, monkeypatch, db_dsn):
     class ConnWrapper:
         def __init__(self, conn):
             self._conn = conn
+
         def __getattr__(self, name):
             return getattr(self._conn, name)
+
         async def copy_to_table(self, *args, **kwargs):
             current["value"] += 1
             if current["value"] > max_concurrent["value"]:

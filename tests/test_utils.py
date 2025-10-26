@@ -1,5 +1,6 @@
-import pytest
 from datetime import date
+
+import pytest
 
 import utils
 
@@ -26,4 +27,3 @@ def test_parse_date_invalid(value):
 @pytest.mark.parametrize("value", ["", "   ", None, 123])
 def test_parse_date_non_string_or_blank(value):
     assert utils.parse_date(value) is None
-
