@@ -12,9 +12,7 @@ from dotenv import load_dotenv
 
 from database.models import Base
 
-
 from alembic import context
-
 
 load_dotenv()
 
@@ -27,9 +25,8 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-SYNC_DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-config.set_main_option("sqlalchemy.url", SYNC_DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -57,7 +54,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=SYNC_DATABASE_URL,
+        url=DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -74,7 +71,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = create_engine(SYNC_DATABASE_URL, future=True)
+    connectable = create_engine(DATABASE_URL, future=True)
 
     with connectable.connect() as connection:
         context.configure(
