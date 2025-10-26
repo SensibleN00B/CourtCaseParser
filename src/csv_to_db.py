@@ -1,16 +1,27 @@
-import os
 import asyncio
+import os
+
 import asyncpg
 import pandas as pd
 from dotenv import load_dotenv
 
-from utils import parse_date
 from detect_encoding import detect_encoding
+from utils import parse_date
 
 EXPECTED_COLUMNS = [
-    "court_name", "case_number", "case_proc", "registration_date",
-    "judge", "judges", "participants", "stage_date", "stage_name",
-    "cause_result", "cause_dep", "type", "description"
+    "court_name",
+    "case_number",
+    "case_proc",
+    "registration_date",
+    "judge",
+    "judges",
+    "participants",
+    "stage_date",
+    "stage_name",
+    "cause_result",
+    "cause_dep",
+    "type",
+    "description",
 ]
 
 load_dotenv()
@@ -20,11 +31,23 @@ DATABASE_URL = os.getenv("DATABASE_URL_SYNC")
 def normalize_csv(input_path: str, output_path: str) -> int:
     enc = detect_encoding(input_path)
     try:
-        df = pd.read_csv(input_path, encoding=enc, sep=None, engine="python",
-                         dtype=str, on_bad_lines="skip")
+        df = pd.read_csv(
+            input_path,
+            encoding=enc,
+            sep=None,
+            engine="python",
+            dtype=str,
+            on_bad_lines="skip",
+        )
     except Exception:
-        df = pd.read_csv(input_path, encoding=enc, sep=";", engine="python",
-                         dtype=str, on_bad_lines="skip")
+        df = pd.read_csv(
+            input_path,
+            encoding=enc,
+            sep=";",
+            engine="python",
+            dtype=str,
+            on_bad_lines="skip",
+        )
 
     df.columns = [
         c.replace("\ufeff", "").strip().lower().replace(" ", "_").replace("-", "_")
@@ -45,7 +68,7 @@ def normalize_csv(input_path: str, output_path: str) -> int:
 
     for col in df.columns:
         if df[col].dtype == object:
-            df[col] = df[col].str.replace('\xa0', '', regex=False).str.strip()
+            df[col] = df[col].str.replace("\xa0", "", regex=False).str.strip()
 
     df = df[(df["case_number"] != "") & (df["court_name"] != "")]
     df = df.drop_duplicates(subset=["case_number"], keep="first")
@@ -57,7 +80,7 @@ def normalize_csv(input_path: str, output_path: str) -> int:
     return len(df)
 
 
-async def import_csv_files(unpacked_dir: str, concurrency: int = 4):
+async def import_csv_files(unpacked_dir: str):
     csv_files = [
         os.path.join(unpacked_dir, f)
         for f in os.listdir(unpacked_dir)
@@ -109,7 +132,7 @@ async def import_csv_files(unpacked_dir: str, concurrency: int = 4):
                                 format="csv",
                                 delimiter=",",
                                 null="",
-                                columns=EXPECTED_COLUMNS
+                                columns=EXPECTED_COLUMNS,
                             )
                         print(f"✅ COPY to tmp_cases: {os.path.basename(path)}")
                 finally:

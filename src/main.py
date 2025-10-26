@@ -1,9 +1,10 @@
 import asyncio
 import os
+
 from dotenv import load_dotenv
 
 from csv_to_db import import_csv_files
-from fetch_metadata import fetch_dataset_metadata, extract_resources
+from fetch_metadata import extract_resources, fetch_dataset_metadata
 from resource_downloader import download_all_files
 from zip_unpacker import unpack_zip
 
@@ -17,7 +18,9 @@ def main():
     print("Fetching dataset metadata...")
     metadata = fetch_dataset_metadata(dataset_id)
     resources = extract_resources(metadata)
-    resources = [res for res in resources if res.get("format", "").lower() in SUPPORTED_FORMATS]
+    resources = [
+        res for res in resources if res.get("format", "").lower() in SUPPORTED_FORMATS
+    ]
     print(f"Found {len(resources)} supported resources")
 
     data_dir = os.path.join(os.getcwd(), "data")
@@ -44,7 +47,7 @@ def main():
                 {
                     "archive": result["name"],
                     "csv_count": len(csv_files),
-                    "status": "OK" if csv_files else "Empty or invalid"
+                    "status": "OK" if csv_files else "Empty or invalid",
                 }
             )
 

@@ -1,10 +1,11 @@
 import os
 from asyncio import as_completed
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+
 import requests
+from requests.adapters import HTTPAdapter
 from tqdm import tqdm
+from urllib3.util.retry import Retry
 
 
 def create_session() -> requests.Session:
@@ -40,7 +41,9 @@ def download_file(url: str, output_dir: str, position: int = 0) -> str:
 
     while attempt <= max_attempts:
         try:
-            existing_size = os.path.getsize(file_name) if os.path.exists(file_name) else 0
+            existing_size = (
+                os.path.getsize(file_name) if os.path.exists(file_name) else 0
+            )
             headers = {}
             if existing_size > 0:
                 headers["Range"] = f"bytes={existing_size}-"
@@ -58,7 +61,11 @@ def download_file(url: str, output_dir: str, position: int = 0) -> str:
                 return file_name
             if existing_size > 0 and response.status_code == 200:
                 full_length = response.headers.get("content-length")
-                if full_length and full_length.isdigit() and int(full_length) == existing_size:
+                if (
+                    full_length
+                    and full_length.isdigit()
+                    and int(full_length) == existing_size
+                ):
                     return file_name
                 response.close()
                 try:
@@ -70,10 +77,14 @@ def download_file(url: str, output_dir: str, position: int = 0) -> str:
                 response = session.get(url, stream=True, timeout=(10, 300))
 
             response.raise_for_status()
-            desc = os.path.basename(file_name) + (" (resuming)" if existing_size else "")
+            desc = os.path.basename(file_name) + (
+                " (resuming)" if existing_size else ""
+            )
 
             if response.status_code == 206:
-                total = _parse_total_from_content_range(response.headers.get("Content-Range"))
+                total = _parse_total_from_content_range(
+                    response.headers.get("Content-Range")
+                )
                 total_size = (total - existing_size) if total is not None else None
             else:
                 cl = response.headers.get("content-length")
@@ -131,10 +142,10 @@ def download_all_files(resources: list[dict], output_dir: str, max_workers: int 
         }
 
         for future in tqdm(
-                as_completed(future_to_res),
-                total=len(future_to_res),
-                desc="Downloading files...",
-                ncols=100
+            as_completed(future_to_res),
+            total=len(future_to_res),
+            desc="Downloading files...",
+            ncols=100,
         ):
             res = future_to_res[future]
             try:

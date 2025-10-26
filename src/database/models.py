@@ -1,5 +1,5 @@
+from sqlalchemy import Date, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import String, Integer, Date, Text
 
 
 class Base(DeclarativeBase):
