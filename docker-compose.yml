@@ -23,8 +23,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://admin:some_password@db:5432/court_cases
+      DATABASE_URL_SYNC: postgresql://admin:some_password@db:5432/court_cases
     command: alembic upgrade head
 
 
