@@ -1,5 +1,7 @@
 import asyncio
 import os
+import shutil
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -50,6 +52,8 @@ def main():
                     "status": "OK" if csv_files else "Empty or invalid",
                 }
             )
+        elif result["status"] == "success" and result["path"].lower().endswith(".csv"):
+            shutil.move(result["path"], os.path.join(data_dir, "unpacked", Path(result["path"]).name))
 
     if summary:
         print(f"\nSummary of unpacking:")
