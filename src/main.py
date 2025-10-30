@@ -33,10 +33,13 @@ def main():
 
     print("\nSummary of downloading:")
     for result in results:
-        if result["status"] == "success":
+        status = result.get("status")
+        if status == "success":
             print(f"✅ {result['name']} -> {result['path']}")
+        elif status == "skipped":
+            print(f"⏭️  {result['name']} -> already in unpacked ({result['path']})")
         else:
-            print(f"❌ {result['name']} -> {result['error']}")
+            print(f"❌ {result['name']} -> {result.get('error', 'unknown error')}")
 
     print("\nUnpacking ZIP files...")
     summary = []
@@ -53,7 +56,13 @@ def main():
                 }
             )
         elif result["status"] == "success" and result["path"].lower().endswith(".csv"):
-            shutil.move(result["path"], os.path.join(data_dir, "unpacked", Path(result["path"]).name))
+            src_path = result["path"]
+            dest_path = os.path.join(unpacked_dir, Path(src_path).name)
+            if os.path.abspath(src_path).startswith(os.path.abspath(unpacked_dir)):
+                continue
+            if os.path.exists(dest_path):
+                continue
+            shutil.move(src_path, dest_path)
 
     if summary:
         print(f"\nSummary of unpacking:")

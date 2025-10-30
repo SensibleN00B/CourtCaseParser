@@ -118,13 +118,13 @@ def download_file(url: str, output_dir: str, position: int = 0) -> str:
             if attempt > max_attempts:
                 raise RuntimeError(f"An error occurred while loading {url}: {error}")
             try:
-                response.close()  # type: ignore[name-defined]
+                response.close()
             except Exception:
                 pass
             continue
         finally:
             try:
-                response.close()  # type: ignore[name-defined]
+                response.close()
             except Exception:
                 pass
     return None
@@ -134,11 +134,35 @@ def download_all_files(resources: list[dict], output_dir: str, max_workers: int 
     os.makedirs(output_dir, exist_ok=True)
     results = []
 
+    unpacked_dir = os.path.join(output_dir, "unpacked")
+
+    # Prepare download tasks, skipping CSVs already present in unpacked
+    tasks = []
+    for res in resources:
+        url = res.get("url")
+        if not url:
+            continue
+
+        fmt = (res.get("format") or "").lower()
+        file_name = os.path.basename(url)
+        unpacked_path = os.path.join(unpacked_dir, file_name)
+
+        if fmt == "csv" and os.path.exists(unpacked_path):
+            results.append(
+                {
+                    "name": res.get("name"),
+                    "path": unpacked_path,
+                    "status": "skipped",
+                }
+            )
+            continue
+
+        tasks.append(res)
+
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_to_res = {
             executor.submit(download_file, res["url"], output_dir, index): res
-            for index, res in enumerate(resources)
-            if res.get("url")
+            for index, res in enumerate(tasks)
         }
 
         for future in tqdm(
@@ -151,7 +175,7 @@ def download_all_files(resources: list[dict], output_dir: str, max_workers: int 
             try:
                 results.append(
                     {
-                        "name": res["name"],
+                        "name": res.get("name"),
                         "path": future.result(),
                         "status": "success",
                     }
@@ -159,7 +183,7 @@ def download_all_files(resources: list[dict], output_dir: str, max_workers: int 
             except Exception as error:
                 results.append(
                     {
-                        "name": res["name"],
+                        "name": res.get("name"),
                         "error": str(error),
                         "status": "failed",
                     }
