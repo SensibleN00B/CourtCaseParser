@@ -64,3 +64,25 @@ def test_normalize_csv_null_case_number(tmp_path, monkeypatch):
     rows = c2d.normalize_csv(str(inp), str(outp))
     assert rows == 0
     assert outp.read_text(encoding="utf-8").strip() == ""
+
+
+def test_normalize_csv_strips_numero_prefix(tmp_path, monkeypatch):
+    inp = tmp_path / "in.csv"
+    outp = tmp_path / "out.csv"
+    content = (
+        "court_name;case_number\n"
+        "Court A;№123\n"
+        "Court B;№ 456\n"
+    )
+    inp.write_text(content, encoding="utf-8")
+    monkeypatch.setattr(c2d, "detect_encoding", lambda p: "utf-8")
+
+    rows = c2d.normalize_csv(str(inp), str(outp))
+    assert rows == 2
+
+    with outp.open("r", encoding="utf-8", newline="") as f:
+        reader = csv.reader(f)
+        out_rows = list(reader)
+
+    assert out_rows[0][1] == "123"
+    assert out_rows[1][1] == "456"

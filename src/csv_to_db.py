@@ -64,6 +64,8 @@ def normalize_csv(input_path: str, output_path: str) -> int:
     df["case_number"] = df["case_number"].replace(
         {"nan": "", "NaN": "", "NULL": "", "null": "", "None": ""}
     )
+    # Remove leading '№' symbol (with optional whitespace) from case numbers
+    df["case_number"] = df["case_number"].str.replace(r"^\s*№\s*", "", regex=True)
     df["court_name"] = df["court_name"].fillna("").astype(str).str.strip()
 
     for col in df.columns:
